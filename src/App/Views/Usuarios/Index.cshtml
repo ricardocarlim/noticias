@@ -1,0 +1,158 @@
+﻿@{
+    ViewData["Title"] = "Usuários";
+}
+
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+
+<div class="container mt-4">
+    <h2 class="mb-4">Usuários</h2>
+
+    <table id="usuariosTable" class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Senha</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Os usuários serão inseridos aqui via jQuery -->
+        </tbody>
+    </table>
+
+    <button id="addUsuario" class="btn btn-primary mt-2">Adicionar Usuário</button>
+</div>
+
+<!-- Modal para adicionar/editar usuário -->
+<div id="usuarioModal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalTitle" class="modal-title">Adicionar Usuário</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="usuarioId" />
+
+                <div class="form-group">
+                    <label for="usuarioNome">Nome:</label>
+                    <input type="text" id="usuarioNome" class="form-control" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="usuarioEmail">Email:</label>
+                    <input type="email" id="usuarioEmail" class="form-control" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="usuarioSenha">Senha:</label>
+                    <input type="password" id="usuarioSenha" class="form-control" required />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveUsuario" class="btn btn-success">Salvar</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<script>
+    $(document).ready(function () {
+        carregarUsuarios();
+
+        $("#addUsuario").click(function () {
+            $('#modalTitle').text("Adicionar Usuário");
+            $('#usuarioId').val('');
+            $('#usuarioNome').val('');
+            $('#usuarioEmail').val('');
+            $('#usuarioSenha').val('');
+            $("#usuarioModal").modal('show');
+        });
+
+        $("#saveUsuario").click(function () {
+            const id = $('#usuarioId').val();
+            const usuario = {
+                Id: id ? parseInt(id) : 0,
+                Nome: $('#usuarioNome').val(),
+                Email: $('#usuarioEmail').val(),
+                Senha: $('#usuarioSenha').val()
+            };
+
+            const url = id ? '/Usuarios/EditarUsuario' : '/Usuarios/CriarUsuario';
+            const method = id ? 'PUT' : 'POST';
+
+            $.ajax({
+                url: url,
+                type: method,
+                contentType: 'application/json',
+                data: JSON.stringify(usuario),
+                success: function () {
+                    carregarUsuarios();
+                    $("#usuarioModal").modal('hide');
+                }
+            });
+        });
+
+        $(document).on("click", ".editUsuario", function () {
+            const row = $(this).closest('tr');
+            $('#modalTitle').text("Editar Usuário");
+            $('#usuarioId').val(row.find(".usuarioId").text());
+            $('#usuarioNome').val(row.find(".usuarioNome").text());
+            $('#usuarioEmail').val(row.find(".usuarioEmail").text());
+            $('#usuarioSenha').val(row.find(".usuarioSenha").text());
+            $("#usuarioModal").modal('show');
+        });
+
+        $(document).on("click", ".deleteUsuario", function () {
+            const id = $(this).data("id");
+            $.ajax({
+                url: `/Usuarios/ExcluirUsuario?id=${id}`,
+                type: 'POST',
+                success: function () {
+                    carregarUsuarios();
+                }
+            });
+        });
+
+        $(".close, .btn-secondary").click(function () {
+            $("#usuarioModal").modal('hide'); // Fecha o modal
+        });
+
+    });
+
+    function carregarUsuarios() {
+        $.ajax({
+            url: '/Usuarios/ObterTodos',
+            type: 'GET',
+            success: function (data) {
+                const tableBody = $('#usuariosTable tbody');
+                tableBody.empty();
+                $.each(data, function (index, usuario) {
+                    tableBody.append(`
+                            <tr>
+                                <td class="usuarioId">${usuario.id}</td>
+                                <td class="usuarioNome">${usuario.nome}</td>
+                                <td class="usuarioEmail">${usuario.email}</td>
+                                <td class="usuarioSenha">${usuario.senha}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning editUsuario">Editar</button>
+                                    <button class="btn btn-sm btn-danger deleteUsuario" data-id="${usuario.id}">Excluir</button>
+                                </td>
+                            </tr>
+                        `);
+                });
+            }
+        });
+        $(".close, .btn-secondary").click(function () {
+            $("#usuarioModal").modal('hide'); // Fecha o modal
+        });
+
+    }
+</script>

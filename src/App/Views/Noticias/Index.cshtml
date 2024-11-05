@@ -1,0 +1,203 @@
+﻿@{
+    ViewData["Title"] = "Notícias";
+}
+
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+
+<div class="container mt-4">
+    <h2 class="mb-4">Notícias</h2>
+
+    <table id="noticiasTable" class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>ID</th>
+                <th>Título</th>
+                <th>Texto</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- As notícias serão inseridas aqui via jQuery -->
+        </tbody>
+    </table>
+
+    <button id="addNoticia" class="btn btn-primary mt-2">Adicionar Notícia</button>
+</div>
+
+<!-- Modal para adicionar/editar notícia -->
+<div id="noticiaModal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalTitle" class="modal-title">Adicionar Notícia</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="noticiaId" />
+
+                <div class="form-group">
+                    <label for="noticiaTitulo">Título:</label>
+                    <input type="text" id="noticiaTitulo" class="form-control" required />
+                </div>
+
+                <div class="form-group">
+                    <label for="noticiaTexto">Texto:</label>
+                    <textarea id="noticiaTexto" class="form-control" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="noticiaUsuarioId">Usuário:</label>
+                    <select id="noticiaUsuarioId" class="form-control">
+                        <!-- Carregado dinamicamente -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="noticiaTags">Tags:</label>
+                    <select id="noticiaTags" class="form-control" multiple>
+                        <!-- Carregado dinamicamente -->
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveNoticia" class="btn btn-success">Salvar</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<script>
+    $(document).ready(function () {
+        carregarNoticias();
+        carregarUsuarios();
+        carregarTags();
+
+        $("#addNoticia").click(function () {
+            $('#modalTitle').text("Adicionar Notícia");
+            $('#noticiaId').val('');
+            $('#noticiaTitulo').val('');
+            $('#noticiaTexto').val('');
+            $('#noticiaUsuarioId').val('');
+            $('#noticiaTags').val([]);
+            $("#noticiaModal").modal('show');
+        });
+
+        $(document).on("click", ".editNoticia", function () {
+            const id = $(this).data("id");
+            $.ajax({
+                url: `/Noticias/ObterPorId?id=${id}`,
+                type: 'GET',
+                success: function (noticia) {
+                    $('#modalTitle').text("Editar Notícia");
+                    $('#noticiaId').val(noticia.id);
+                    $('#noticiaTitulo').val(noticia.titulo);
+                    $('#noticiaTexto').val(noticia.texto);
+                    $('#noticiaUsuarioId').val(noticia.usuarioId);
+                    $('#noticiaTags').val(noticia.tagIds);
+                    $("#noticiaModal").modal('show');
+                }
+            });
+        });
+
+        $("#saveNoticia").click(function () {
+            const noticia = {
+                Id: $('#noticiaId').val() ? parseInt($('#noticiaId').val()) : 0,
+                Titulo: $('#noticiaTitulo').val(),
+                Texto: $('#noticiaTexto').val(),
+                UsuarioId: $('#noticiaUsuarioId').val(),
+                TagIds: $('#noticiaTags').val()
+            };
+
+            const url = noticia.Id ? '/Noticias/EditarNoticia' : '/Noticias/CriarNoticia';
+            const method = noticia.Id ? 'PUT' : 'POST';
+
+            $.ajax({
+                url: url,
+                type: method,
+                contentType: 'application/json',
+                data: JSON.stringify(noticia),
+                success: function () {
+                    carregarNoticias();
+                    $("#noticiaModal").modal('hide');
+                },
+                error: function (xhr, status, error) {
+                    alert(`Erro ao salvar a noticia. Código de status: ${xhr.status}. Mensagem: ${xhr.responseText || error}`);
+                }
+            });
+        });
+
+        $(document).on("click", ".deleteNoticia", function () {
+            const id = $(this).data("id");
+            $.ajax({
+                url: `/Noticias/ExcluirNoticia?id=${id}`,
+                type: 'POST',
+                success: function () {
+                    carregarNoticias();
+                }, error: function (xhr, status, error) {
+                    alert(`Erro ao excluir a noticia. Código de status: ${xhr.status}. Mensagem: ${xhr.responseText || error}`);
+                }
+            });
+        });
+
+        $(".close, .btn-secondary").click(function () {
+            $("#noticiaModal").modal('hide'); // Fecha o modal
+        });
+    });
+
+    function carregarNoticias() {
+        $.ajax({
+            url: '/Noticias/ObterTodas',
+            type: 'GET',
+            success: function (data) {
+                const tableBody = $('#noticiasTable tbody');
+                tableBody.empty();
+                $.each(data, function (index, noticia) {
+                    tableBody.append(`
+                                <tr>
+                                    <td>${noticia.id}</td>
+                                    <td>${noticia.titulo}</td>
+                                    <td>${noticia.texto}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning editNoticia" data-id="${noticia.id}">Editar</button>
+                                        <button class="btn btn-sm btn-danger deleteNoticia" data-id="${noticia.id}">Excluir</button>
+                                    </td>
+                                </tr>
+                            `);
+                });
+            }
+        });
+    }
+
+    function carregarUsuarios() {
+        $.ajax({
+            url: '/Usuarios/ObterTodos',
+            type: 'GET',
+            success: function (data) {
+                const usuarioDropdown = $('#noticiaUsuarioId');
+                usuarioDropdown.empty();
+                $.each(data, function (index, usuario) {
+                    usuarioDropdown.append(`<option value="${usuario.id}">${usuario.nome}</option>`);
+                });
+            }
+        });
+    }
+
+    function carregarTags() {
+        $.ajax({
+            url: '/Tags/ObterTodas',
+            type: 'GET',
+            success: function (data) {
+                const tagsDropdown = $('#noticiaTags');
+                tagsDropdown.empty();
+                $.each(data, function (index, tag) {
+                    tagsDropdown.append(`<option value="${tag.id}">${tag.descricao}</option>`);
+                });
+            }
+        });
+    }
+</script>

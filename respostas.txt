@@ -1,0 +1,59 @@
+1) Qual fluxo os dados de um formulário em uma View deve percorrer até ser
+armazenado na fonte de dados em um projeto DDD?
+
+-View (Camada de Apresentação): O usuário preenche um formulário e submete os dados.
+
+-Controller: Recebe a solicitação, realiza validações e chama um serviço de aplicação.
+
+-Serviço de Aplicação: Processa a lógica de negócios e cria ou atualiza uma entidade do domínio.
+
+-Domínio (Entidade): A entidade pode executar validações adicionais antes de ser persistida.
+
+-Repositório: O serviço de aplicação chama o repositório para armazenar os dados no banco de dados.
+
+-Confirmação e Feedback: O Controller retorna a confirmação à View, informando o usuário sobre o sucesso ou falha da operação.
+
+Fluxo:
+Formulário (View) → Controller → Serviço de Aplicação → Domínio (Entidade) → Repositório → Banco de Dados.
+
+
+2) Nossa aplicação necessita que um usuário esteja autenticado para poder navegar
+nas funcionalidades, em .net, como podemos desenvolver essa autenticação?
+
+-ASP.NET Identity: Uma solução robusta e flexível que permite gerenciar usuários, senhas, funções e muito mais. 
+Ele integra-se facilmente ao Entity Framework e fornece 
+recursos como autenticação baseada em cookie e gerenciamento de perfil de usuário.
+
+-Autenticação JWT (JSON Web Tokens): Uma abordagem popular para autenticação de APIs, 
+onde os usuários recebem um token após fazer login. Esse token pode ser enviado em cada 
+solicitação subsequente para validar a identidade do usuário.
+
+-OAuth/OpenID Connect: Utiliza provedores de autenticação de terceiros (como Google, Facebook ou Microsoft) 
+para permitir que os usuários façam login em sua aplicação.
+Essa abordagem reduz a necessidade de gerenciar credenciais de usuário diretamente em sua aplicação.
+
+
+3) Estamos enfrentando problemas de performance na pagina inicial de um portal que
+tem muitos acessos. Essa página exibe eventos separados em 6 sessões do html,
+filtrados, cada sessão, por uma regra de negócio. Trata-se de um projeto MVC, no qual
+são realizados 6 consultas via ORM para carregar a View que será processada no
+servidor e disponibilizada ao browser. O que podemos fazer para tentar mitigar esse
+problema de performance?
+
+Combinar Consultas: Realize uma única consulta que agregue os dados necessários, 
+utilizando JOINs ou subconsultas, em vez de múltiplas consultas separadas.
+
+Revisão das Consultas do ORM: Analise as consultas geradas pelo ORM para identificar possíveis ineficiências. 
+Optimize as consultas para garantir que estejam executando de forma eficiente.
+
+Cache de Resultados: Utilize caching para armazenar resultados de consultas frequentes, 
+reduzindo a necessidade de executar as mesmas consultas repetidamente.
+
+Indexação das Tabelas: Verifique a indexação das tabelas no banco de dados para garantir que as colunas utilizadas nas consultas 
+estejam adequadamente indexadas, melhorando assim o tempo de resposta.
+
+Paginação e Limitação de Dados: Implemente paginação ou limite a 
+quantidade de dados retornados para reduzir o tempo de carregamento da página.
+
+Carregamento Assíncrono: Considere carregar as sessões de eventos de forma 
+assíncrona para melhorar a percepção de desempenho do usuário.

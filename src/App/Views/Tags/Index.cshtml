@@ -1,0 +1,142 @@
+﻿@{
+    ViewData["Title"] = "Tags";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Tags</h2>
+
+    <table id="tagsTable" class="table table-striped">
+        <thead class="thead-dark">
+            <tr>
+                <th>ID</th>
+                <th>Descrição</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- As tags serão inseridas aqui via jQuery -->
+        </tbody>
+    </table>
+
+    <button id="addTag" class="btn btn-primary mt-2">Adicionar Tag</button>
+</div>
+
+<!-- Modal para adicionar/editar tag -->
+<div id="tagModal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="modalTitle" class="modal-title">Adicionar Tag</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="tagId" />
+                <div class="form-group">
+                    <label for="tagDescricao">Descrição:</label>
+                    <input type="text" id="tagDescricao" class="form-control" required />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveTag" class="btn btn-success">Salvar</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+<script>
+    $(document).ready(function () {
+        carregarTags();
+
+        // Abrir modal para adicionar nova tag
+        $("#addTag").click(function () {
+            $('#modalTitle').text("Adicionar Tag");
+            $('#tagId').val('');
+            $('#tagDescricao').val('');
+            $("#tagModal").modal('show');
+        });
+
+        // Salvar tag (criar ou editar)
+        $("#saveTag").click(function () {
+            const id = $('#tagId').val();
+            const tag = {
+                Id: id ? parseInt(id) : 0,
+                Descricao: $('#tagDescricao').val()
+            };
+
+            const url = id ? '/Tags/EditarTag' : '/Tags/CriarTag';
+            const method = id ? 'PUT' : 'POST';
+
+            $.ajax({
+                url: url,
+                type: method,
+                contentType: 'application/json',
+                data: JSON.stringify(tag),
+                success: function () {
+                    carregarTags();
+                    $("#tagModal").modal('hide');
+                },
+                error: function (xhr, status, error) {
+                    alert(`Erro ao salvar a tag. Código de status: ${xhr.status}. Mensagem: ${xhr.responseText || error}`);
+                }
+            });
+        });
+
+        // Abrir modal para editar tag
+        $(document).on("click", ".editTag", function () {
+            const row = $(this).closest('tr');
+            $('#modalTitle').text("Editar Tag");
+            $('#tagId').val(row.find(".tagId").text());
+            $('#tagDescricao').val(row.find(".tagDescricao").text());
+            $("#tagModal").modal('show');
+        });
+
+        // Excluir tag
+        $(document).on("click", ".deleteTag", function () {
+            const id = $(this).data("id");
+            $.ajax({
+                url: `/Tags/ExcluirTag?id=${id}`,
+                type: 'POST',
+                success: function () {
+                    carregarTags();
+                },
+                error: function (xhr, status, error) {
+                    alert(`Erro ao excluir a tag. Código de status: ${xhr.status}. Mensagem: ${xhr.responseText || error}`);
+                    carregarTags();
+                }
+            });
+        });
+
+        $(".close, .btn-secondary").click(function () {
+            $("#tagModal").modal('hide'); // Fecha o modal
+        });
+    });
+
+    // Carregar lista de tags
+    function carregarTags() {
+        $.ajax({
+            url: '/Tags/ObterTodas',
+            type: 'GET',
+            success: function (data) {
+                const tableBody = $('#tagsTable tbody');
+                tableBody.empty();
+                $.each(data, function (index, tag) {
+                    tableBody.append(`
+                                <tr>
+                                    <td class="tagId">${tag.id}</td>
+                                    <td class="tagDescricao">${tag.descricao}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-warning editTag">Editar</button>
+                                        <button class="btn btn-sm btn-danger deleteTag" data-id="${tag.id}">Excluir</button>
+                                    </td>
+                                </tr>
+                            `);
+                });
+            }
+        });
+    }
+</script>
